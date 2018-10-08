@@ -52,8 +52,6 @@ void USBSerial::init(void)
 {
   _rx_head = 0;
   _rx_tail = 0;
-  _tx_head = 0;
-  _tx_tail = 0;
 }
 
 /*
@@ -99,6 +97,11 @@ int HardwareSerial::_tx_complete_irq(serial_t* obj)
 
 void USBSerial::begin(unsigned long baud, byte config)
 {
+  pinMode(PA12, OUTPUT);
+  digitalWrite(PA12,LOW);
+  USBD_LL_Delay(1);
+  pinMode(PA12, INPUT);
+
   /* Init Device Library */
   USBD_Init(&USBD_Device, &VCP_Desc, 0);
 
@@ -112,7 +115,6 @@ void USBSerial::begin(unsigned long baud, byte config)
   USBD_Start(&USBD_Device);
   
   /* Set Application Buffers */
-  USBD_CDC_SetTxBuffer(&USBD_Device, _tx_buff, 0);
   USBD_CDC_SetRxBuffer(&USBD_Device, _rx_buff);
   
 }
@@ -174,33 +176,32 @@ void USBSerial::flush()
   if (!_written)
     return;
 
-  while((_tx_head != _tx_tail)) {
-    // nop, the interrupt handler will free up space for us
-  }
-  // If we get here, nothing is queued anymore (DRIE is disabled) and
-  // the hardware finished tranmission (TXC is set).
+  uint8_t tResult = USBD_OK;
+  do {
+    tResult = USBD_CDC_TransmitPacket(&USBD_Device);
+  } while (tResult == USBD_BUSY);
 }
 
 size_t USBSerial::write(uint8_t c)
 {
+  return write(&c, 1);
+}
+
+size_t USBSerial::write(const uint8_t *buf, size_t len)
+{
+  if (!(bool) *this || !buf) {
+    return 0;
+  }
+
   _written = true;
 
-  tx_buffer_index_t i = (_tx_head + 1) % SERIAL_TX_BUFFER_SIZE;
+  USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t *)buf, len);
 
-  // If the output buffer is full, there's nothing for it other than to
-  // wait for the interrupt handler to empty it a bit
-  while (i == _tx_tail) {
-    // nop, the interrupt handler will free up space for us
-  }
-
-  _tx_buff[_tx_head] = c;
-  _tx_head = i;
+  uint8_t tResult = USBD_OK;
+  do {
+    tResult = USBD_CDC_TransmitPacket(&USBD_Device);
+  } while (tResult == USBD_BUSY);
   
-  USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t *) &_tx_buff[_tx_tail], 1);
-  
-  if (USBD_CDC_TransmitPacket(&USBD_Device) == USBD_OK) {
-    _tx_tail = (_tx_tail + 1) % SERIAL_TX_BUFFER_SIZE;
-  }
-
-  return 1;
+  return (tResult == USBD_OK ? len : 0);
 }
+

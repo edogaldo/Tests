@@ -109,6 +109,7 @@ void loop() {
       delay(150);              // wait for a second
     }
     Serial.println("done");
+    Serial.println("0aaaaaaaaa_1aaaaaaaaa_2aaaaaaaaa_3aaaaaaaaa_4aaaaaaaaa_5aaaaaaaaa_6aaaaaaaaa_7aaaaaaaaa_8aaaaaaaaa_9aaaaaaaaa_10aaaaaaaaa_11aaaaaaaaa_12aaaaaaaaa_13aaaaaaaaa_14aaaaaaaaa_15aaaaaaaaa_");
   }
   delay(5000);           // wait 5 seconds for next scan
 }
