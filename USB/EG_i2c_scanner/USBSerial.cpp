@@ -30,6 +30,13 @@
 #include "Arduino.h"
 #include "USBSerial.h"
 
+#include <usbd_core.h>
+#include "usbd_desc.h"
+#include "usbd_cdc_interface.h"
+
+
+
+
 // #if defined(HAVE_USBSERIAL)
   // USBSerial SerialUSB();
   // void serialEventUSB() __attribute__((weak));
@@ -45,14 +52,14 @@
 // Constructors ////////////////////////////////////////////////////////////////
 USBSerial::USBSerial()
 {
-  init();
+  // init();
 }
 
-void USBSerial::init(void)
-{
-  _rx_head = 0;
-  _rx_tail = 0;
-}
+// void USBSerial::init(void)
+// {
+  // _rx_head = 0;
+  // _rx_tail = 0;
+// }
 
 /*
 // Actual interrupt handlers //////////////////////////////////////////////////////////////
@@ -116,6 +123,8 @@ void USBSerial::begin(unsigned long baud, byte config)
   
   /* Set Application Buffers */
   USBD_CDC_SetRxBuffer(&USBD_Device, _rx_buff);
+
+  USBD_LL_Delay(1000);
   
 }
 
@@ -161,11 +170,14 @@ int USBSerial::read(void)
 
 int USBSerial::availableForWrite(void)
 {
+  /*
   tx_buffer_index_t head = _tx_head;
   tx_buffer_index_t tail = _tx_tail;
 
   if (head >= tail) return SERIAL_TX_BUFFER_SIZE - 1 - head + tail;
   return tail - head - 1;
+  */
+  return 100;
 }
 
 void USBSerial::flush()
