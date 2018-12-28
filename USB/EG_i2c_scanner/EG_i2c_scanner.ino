@@ -55,9 +55,9 @@
 
 #include "USBSerial.h"
 
-#define Serial SerialUSB
+USBSerial SerialUSB;
 
-USBSerial Serial;
+#define Serial SerialUSB
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -72,7 +72,7 @@ void loop() {
   byte error, address;
   int nDevices;
 
-  for(int c = 0; c < 5; c++) {
+  for(int c = 0; c < 2; c++) {
     
     Serial.println("Scanning...");
   
@@ -136,24 +136,18 @@ void JumpToBootloader(void) {
   //volatile uint32_t addr = 0x1FFF0000;
   volatile uint32_t addr = 0x0;
   
+  digitalWrite(LED_BUILTIN, LOW);
   Serial.end();
   
   pinMode(PA12, OUTPUT);
   digitalWrite(PA12,LOW);
-  HAL_Delay(10);
-  pinMode(PA12, INPUT);
-
+  HAL_Delay(2000);
 
   /**
    * Step: Disable RCC, set it to default (after reset) settings
    *       Internal clock, no PLL, etc.
    */
-//#if defined(USE_HAL_DRIVER)
   HAL_RCC_DeInit();
-//#endif /* defined(USE_HAL_DRIVER) */
-//#if defined(USE_STDPERIPH_DRIVER)
-  //RCC_DeInit();
-//#endif /* defined(USE_STDPERIPH_DRIVER) */
 
   HAL_DeInit();
   
@@ -169,6 +163,8 @@ void JumpToBootloader(void) {
   SysTick->LOAD = 0;
   SysTick->VAL = 0;
 
+  SCB->VTOR = 0;
+  
   /**
    * Step: Remap system memory to address 0x0000 0000 in address space
    *       For each family registers may be different. 
@@ -193,6 +189,7 @@ void JumpToBootloader(void) {
    *       Use address with 4 bytes offset which specifies jump location where program starts
    */
   SysMemBootJump = (void (*)(void)) (*((uint32_t *)(addr + 4)));
+  //((void (*)(void)) *((uint32_t*) 0x00000004))();
   
   /**
    * Step: Set main stack pointer.

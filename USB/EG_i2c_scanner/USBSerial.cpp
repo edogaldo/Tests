@@ -130,14 +130,19 @@ void USBSerial::begin(unsigned long baud, byte config)
 
 void USBSerial::end()
 {
+  PCD_HandleTypeDef *hpcd = (PCD_HandleTypeDef *)USBD_Device.pData;
+  
   // wait for transmission of outgoing data
   flush();
-
-  /* Stop Device Process */
-  USBD_Stop(&USBD_Device);
   
-  USBD_DeInit(&USBD_Device);
-
+  if (hpcd != NULL)
+  {
+    /* Stop Device Process */
+    HAL_PCD_DevDisconnect(hpcd);
+    USBD_Stop(&USBD_Device);
+    USBD_DeInit(&USBD_Device);
+  }
+  
   // clear any received data
   _rx_head = _rx_tail;
 }
@@ -177,7 +182,7 @@ int USBSerial::availableForWrite(void)
   if (head >= tail) return SERIAL_TX_BUFFER_SIZE - 1 - head + tail;
   return tail - head - 1;
   */
-  return 100;
+  return 64;
 }
 
 void USBSerial::flush()
